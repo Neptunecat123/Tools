@@ -37,7 +37,13 @@ def get_answer_dict(answer_file):
 
     nrows = sheet.nrows
     for row in range(nrows):
-        ans_dict[row+1] = sheet.cell_value(rowx=row, colx=0).lower().strip()
+        # rowd = sheet.row_values(row)
+        # rowdata = [x.lower().strip() for x in rowd]
+        # # ans_dict[row+1] = sheet.cell_value(rowx=row, colx=0).lower().strip()
+        # ans_dict[row+1] = rowdata
+        rowd = sheet.row_values(row)
+        rowdata = [x.lower().strip() for x in rowd]
+        ans_dict[row+1] = rowdata
 
     return ans_dict
 
@@ -56,9 +62,10 @@ def compare_answer(hw_file, correct_dict):
 
         if hw_dict != correct_dict:
             for i in range(1, len(correct_dict)+1):
-                if hw_dict[i] != correct_dict[i]:
+                if hw_dict[i][0] not in correct_dict[i]:   
                     wrong_lst.append(i)
                     wrong_dict[i] = hw_dict[i]
+
         format_report("correct", name)
     except:
         format_report("error", name)
@@ -86,11 +93,13 @@ def write_personal_report(data, correct_dict):
         worksheet.write(0,j,label=head[j])
     if wrong_lst:
         for i in range(len(wrong_lst)):
+            string = " "
+            correct_ans = string.join(correct_dict[wrong_lst[i]])
             worksheet.write(i+1, 0, label=wrong_lst[i])
             worksheet.write(i+1, 1, label=wrong_dict[wrong_lst[i]])
-            worksheet.write(i+1, 2, label=correct_dict[wrong_lst[i]])
+            worksheet.write(i+1, 2, label=correct_ans)
     else:
-        worksheet.write(1, 1, label="None")
+        worksheet.write(1, 0, label="None")
 
     workbook.save(os.path.join(report_path, report_name))            
 
@@ -125,8 +134,6 @@ def main():
     homework_files = get_all_homework(homework_path)
 
     correct_dict = get_answer_dict(correct_answer_file)
-    print("Answer:", correct_dict)
-
  
     all_result_lst = list()
     for homework_file in homework_files:
@@ -141,6 +148,6 @@ def main():
 if __name__ == "__main__":
     report_path = os.path.join(current_path, "report")
     homework_path = os.path.join(current_path, "homework")
-    correct_answer_file = os.path.join(current_path, "answer.xlsx")
+    correct_answer_file = os.path.join(current_path, "Answer.xlsx")
 
     main()
