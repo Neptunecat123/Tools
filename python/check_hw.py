@@ -42,7 +42,13 @@ def get_answer_dict(answer_file):
         # # ans_dict[row+1] = sheet.cell_value(rowx=row, colx=0).lower().strip()
         # ans_dict[row+1] = rowdata
         rowd = sheet.row_values(row)
-        rowdata = [x.lower().strip() for x in rowd]
+        # rowdata = [x.lower().strip() for x in rowd]
+        rowdata = list()
+        for x in rowd:
+            if str(x).isdigit():
+                rowdata.append(str(x))
+            else:
+                rowdata.append(str(x).lower().strip())
         ans_dict[row+1] = rowdata
 
     return ans_dict
@@ -103,10 +109,26 @@ def write_personal_report(data, correct_dict):
 
     workbook.save(os.path.join(report_path, report_name))            
 
-def write_total_report(data):
+def write_total_report(all_result_lst, correct_dict):
     all_wrong_lst = list()
-    for item in data:
+    all_wrong_hw_dict = dict()
+    for item in all_result_lst:
         all_wrong_lst.extend(item[1])
+    
+    wrong_dict_lst = list()
+    for item in all_result_lst:
+        wrong_dict = dict()
+        if item[1]:
+            for num in item[1]:
+                wrong_dict[num] = (item[0], item[2][num])
+        wrong_dict_lst.append(wrong_dict)
+
+    for i in wrong_dict_lst:
+        for k, v in i.items():
+            if k in all_wrong_hw_dict:
+                all_wrong_hw_dict[k].append(v)
+            else:
+                all_wrong_hw_dict[k] = [v]
     
     cnt = Counter()
     for item in all_wrong_lst:
@@ -114,16 +136,34 @@ def write_total_report(data):
     total_result_dict = dict(cnt)
     sort_num_lst = sorted(total_result_dict)
 
-    report_name = "Total_report.xls"
-    head = [u"错误题目", u"错误人数"]
     workbook = xlwt.Workbook(encoding='UTF-8')
-    worksheet = workbook.add_sheet('Sheet1')
-    for j in range(len(head)):
-        worksheet.write(0,j,label=head[j])
+    report_name = "Total_report.xls"
 
+    head1 = [u"错误题目", u"错误人数"]
+    worksheet1 = workbook.add_sheet('Sheet1')
+    for j in range(len(head1)):
+        worksheet1.write(0,j,label=head1[j])
     for i in range(len(sort_num_lst)):
-        worksheet.write(i+1, 0, sort_num_lst[i])
-        worksheet.write(i+1, 1, total_result_dict[sort_num_lst[i]])
+        worksheet1.write(i+1, 0, sort_num_lst[i])
+        worksheet1.write(i+1, 1, total_result_dict[sort_num_lst[i]])
+
+
+    head2 = [u"题号", u"正确答案", u"学生", u"错误答案"]
+    worksheet2 = workbook.add_sheet('Sheet2')
+    for j in range(len(head2)):
+        worksheet2.write(0,j,label=head2[j])
+
+    row = 1
+    for num in range(1, len(correct_dict)+1):
+        if num in all_wrong_hw_dict:
+            for student in all_wrong_hw_dict[num]:
+                string = ";"
+                correct_ans = string.join(correct_dict[num])
+                worksheet2.write(row, 0, num)
+                worksheet2.write(row, 1, correct_ans)
+                worksheet2.write(row, 2, student[0])
+                worksheet2.write(row, 3, student[1])
+                row += 1
 
     workbook.save(os.path.join(report_path, report_name))  
 
@@ -141,8 +181,7 @@ def main():
         all_result_lst.append(result)
         write_personal_report(result, correct_dict)
 
-
-    write_total_report(all_result_lst)
+    write_total_report(all_result_lst, correct_dict)
 
 
 if __name__ == "__main__":
